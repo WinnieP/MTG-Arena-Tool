@@ -10,7 +10,6 @@ const {
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { autoUpdater } = require("electron-updater");
 const Store = require("electron-store");
 
 var rememberStore = new Store({
@@ -28,7 +27,6 @@ const debugBack = false;
 const debugIPC = false;
 
 var mainWindow = null;
-var updaterWindow = null;
 var background = null;
 var overlays = [];
 var mainTimeout = null;
@@ -51,9 +49,7 @@ const {
 const singleLock = app.requestSingleInstanceLock();
 
 app.on("second-instance", () => {
-  if (updaterWindow) {
-    showWindow();
-  } else if (mainWindow.isVisible()) {
+  if (mainWindow.isVisible()) {
     if (mainWindow.isMinimized()) {
       showWindow();
     }
@@ -69,67 +65,16 @@ if (!singleLock) {
 
 app.on("ready", () => {
   if (app.isPackaged) {
-    startUpdater();
+    // startUpdater();
   } else {
     require("devtron").install();
     startApp();
   }
 });
 
-function startUpdater() {
-  if (!app.isPackaged) return;
-  updaterWindow = createUpdaterWindow();
-
-  updaterWindow.webContents.on("did-finish-load", function() {
-    updaterWindow.show();
-    updaterWindow.moveTop();
-  });
-
-  autoUpdater.allowDowngrade = true;
-  let betaChannel = rememberStore.get("settings.beta_channel");
-  if (betaChannel) {
-    autoUpdater.allowPrerelease = true;
-  }
-
-  autoUpdater.checkForUpdatesAndNotify();
-}
-
-autoUpdater.on("update-not-available", info => {
-  console.log("Update not available", info);
-  if (mainWindow) {
-    mainWindow.webContents.send("set_update_state", "Client up to date!");
-  }
-  startApp();
-});
-autoUpdater.on("error", err => {
-  if (mainWindow) {
-    mainWindow.webContents.send("set_update_state", "Update error.");
-  }
-  console.log("Update error: ", err);
-  startApp();
-});
-autoUpdater.on("download-progress", progressObj => {
-  updaterWindow.webContents.send("update_progress", progressObj);
-});
-autoUpdater.on("update-downloaded", info => {
-  console.log("Update downloaded: ", info);
-  installUpdate();
-});
-
-function installUpdate() {
-  autoUpdater.quitAndInstall(true, true);
-}
-
 let appStarted = false;
 
 function startApp() {
-  if (appStarted) {
-    if (updaterWindow) {
-      updaterWindow.destroy();
-      updaterWindow = undefined;
-    }
-    return;
-  }
   mainWindow = createMainWindow();
   background = createBackgroundWindow();
   setBackground(background);
@@ -159,13 +104,6 @@ function startApp() {
       background.webContents.send("start_background");
     }
   });
-
-  // If we destroy updater before creating another renderer
-  // Electron shuts down the whole app.
-  if (updaterWindow) {
-    updaterWindow.destroy();
-    updaterWindow = undefined;
-  }
 
   ipc.on("ipc_switch", function(event, method, from, arg, to) {
     const overlayMux = () =>
@@ -284,7 +222,7 @@ function startApp() {
         break;
 
       case "updates_check":
-        startUpdater();
+        console.log('Updater removed.');
         break;
 
       case "export_txt":
@@ -407,10 +345,6 @@ function showWindow() {
     if (!mainWindow.isVisible()) mainWindow.show();
     else mainWindow.moveTop();
   }
-  if (updaterWindow) {
-    if (!updaterWindow.isVisible()) updaterWindow.show();
-    else updaterWindow.moveTop();
-  }
 }
 
 function quit() {
@@ -426,27 +360,6 @@ function saveWindowPos() {
   obj.x = Math.floor(pos[0]);
   obj.y = Math.floor(pos[1]);
   background.webContents.send("windowBounds", obj);
-}
-
-function createUpdaterWindow() {
-  const win = new electron.BrowserWindow({
-    frame: false,
-    resizable: false,
-    maximizable: false,
-    fullscreenable: false,
-    center: true,
-    show: false,
-    width: 320,
-    height: 240,
-    title: "Updater",
-    icon: "icon.png",
-    webPreferences: {
-      nodeIntegration: true
-    }
-  });
-  win.loadURL(`file://${__dirname}/window_updater/index.html`);
-
-  return win;
 }
 
 function createBackgroundWindow() {
