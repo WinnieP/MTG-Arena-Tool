@@ -342,8 +342,15 @@ function toggleWindow() {
 
 function showWindow() {
   if (mainWindow) {
-    if (!mainWindow.isVisible()) mainWindow.show();
-    else mainWindow.moveTop();
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+    } else {
+      // https://electronjs.org/docs/api/browser-window
+      // moveTop only supported on macOS and Windows
+      if (mainWindow.hasOwnProperty('moveTop')) {
+        mainWindow.moveTop();
+      }
+    }
   }
 }
 
