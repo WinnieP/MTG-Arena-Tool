@@ -43,7 +43,7 @@ async function readSegment(path, start, length) {
     const { bytesRead } = await fsPromises.read(fd, buffer, 0, length, start);
     return buffer.toString("utf-8", 0, bytesRead);
   } finally {
-    fs.close(fd);
+    fs.close(fd, function() {});
   }
 }
 
