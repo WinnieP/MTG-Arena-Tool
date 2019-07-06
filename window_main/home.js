@@ -91,10 +91,7 @@ function openHomeTab(arg, opentab = true) {
   if (ls.discordTag === null || ls.discordTag == "") {
     let but = createDiv(["discord_but"]);
     but.addEventListener("click", () => {
-      let url =
-        "https://discordapp.com/api/oauth2/authorize?client_id=531626302004789280&redirect_uri=http%3A%2F%2Fmtgatool.com%2Fdiscord%2F&response_type=code&scope=identify%20email&state=" +
-        ls.authToken;
-      shell.openExternal(url);
+      console.log('Discord oauth login removed.')
     });
 
     cont.appendChild(but);

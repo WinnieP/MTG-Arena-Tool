@@ -21,7 +21,7 @@ let metadataState = false;
 
 var httpAsync = [];
 
-const serverAddress = "mtgatool.com";
+const serverAddress = "localhost";
 
 function httpBasic() {
   var httpAsyncNew = httpAsync.slice(0);
